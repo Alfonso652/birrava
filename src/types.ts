@@ -29,7 +29,8 @@ export interface Checkin {
   cheers: { user_id: string }[]
 }
 
-export const CHECKIN_SELECT = '*, profiles(username), bars(id, name), cheers(user_id)'
+// El FK explícito es obligatorio: profiles también es alcanzable vía cheers (many-to-many) y PostgREST da PGRST201.
+export const CHECKIN_SELECT = '*, profiles!checkins_user_id_fkey(username), bars(id, name), cheers(user_id)'
 
 export type Ruta =
   | { v: 'feed' }
