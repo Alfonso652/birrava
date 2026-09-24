@@ -6,13 +6,39 @@ export function distanciaKm(a: { lat: number; lng: number }, b: { lat: number; l
   return 12742 * Math.asin(Math.sqrt(h))
 }
 
-export function miPosicion(): Promise<{ lat: number; lng: number }> {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error('Tu navegador no da ubicación'))
+type Pos = { lat: number; lng: number }
+
+function pedir(opciones: PositionOptions): Promise<Pos> {
+  return new Promise((resolve, reject) =>
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => reject(new Error('No se pudo obtener la ubicación')),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
-    )
-  })
+      reject,
+      opciones,
+    ),
+  )
+}
+
+function mensaje(e: GeolocationPositionError) {
+  if (e.code === e.PERMISSION_DENIED) {
+    return 'Permiso de ubicación denegado. Actívalo en los ajustes del navegador para este sitio (icono del candado junto a la dirección).'
+  }
+  if (e.code === e.POSITION_UNAVAILABLE) return 'El móvil no da ubicación. Comprueba que el GPS/Ubicación está activado.'
+  return 'La ubicación tarda demasiado. Prueba otra vez o acércate a una ventana.'
+}
+
+// Primero una posición rápida (caché); la alta precisión por GPS en interiores
+// suele agotar el timeout y es lo que hacía fallar «Cerca».
+export async function miPosicion(): Promise<Pos> {
+  if (!('geolocation' in navigator)) throw new Error('Este navegador no permite ubicación.')
+  if (!window.isSecureContext) throw new Error('La ubicación solo funciona con https.')
+
+  try {
+    return await pedir({ enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 })
+  } catch {
+    try {
+      return await pedir({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 })
+    } catch (e) {
+      throw new Error(mensaje(e as GeolocationPositionError))
+    }
+  }
 }

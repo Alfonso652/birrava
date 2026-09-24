@@ -53,7 +53,7 @@ export default function CheckinCard({ c, yo, onBorrado }: Props) {
       {c.photo_path && <img className="foto" src={fotoUrl(c.photo_path)} alt={c.beer_name} loading="lazy" />}
       <div className="checkin-pie">
         <button className={`chinchin ${lo ? 'dado' : ''}`} onClick={brindar} disabled={mio}>
-          🍻 {cheers.length > 0 ? cheers.length : ''} {mio ? '' : lo ? '¡Chin-chin!' : 'Chin-chin'}
+          🍻 {cheers.length > 0 ? cheers.length : ''} {mio ? '' : lo ? '¡Brindis!' : 'Brindis'}
         </button>
         {mio && <button className="enlace peligro" onClick={borrar}>Borrar</button>}
       </div>
