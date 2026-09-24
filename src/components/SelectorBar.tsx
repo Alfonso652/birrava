@@ -1,22 +1,31 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
 import type { Bar } from '../types'
-import { filtrarBares, fmtKm, useBares } from '../lib/bares'
+import { filtrarBares, fmtKm, guardarBarOsm, useBares, type BarLista } from '../lib/bares'
 import { miPosicion } from '../lib/geo'
+import { useCercania } from '../lib/posicion'
+import type { BarOsm } from '../lib/osm'
 
 interface Props { valor: Bar | null; onChange: (b: Bar | null) => void }
 
 export default function SelectorBar({ valor, onChange }: Props) {
   const { bares, setBares } = useBares()
+  const { pos, osm, buscando, error: errorPos, localizar } = useCercania()
   const [texto, setTexto] = useState('')
-  const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null)
   const [creando, setCreando] = useState(false)
   const [ciudad, setCiudad] = useState('')
   const [error, setError] = useState('')
 
-  async function cerca() {
+  async function elegir(b: BarLista) {
     setError('')
-    try { setPos(await miPosicion()) } catch (e) { setError((e as Error).message) }
+    if (b.id) return onChange(b)
+    try {
+      const guardado = await guardarBarOsm(b as BarOsm)
+      setBares([{ ...guardado, checkins: 0 }, ...bares])
+      onChange(guardado)
+    } catch (e) {
+      setError((e as Error).message)
+    }
   }
 
   async function crear() {
@@ -45,18 +54,20 @@ export default function SelectorBar({ valor, onChange }: Props) {
     )
   }
 
-  const lista = filtrarBares(bares, texto, pos).slice(0, 8)
+  const lista = filtrarBares(bares, texto, pos, osm).slice(0, 8)
   return (
     <div className="selector-bar">
       <div className="fila">
-        <input placeholder="Busca o escribe un bar nuevo" value={texto} onChange={(e) => setTexto(e.target.value)} />
-        <button type="button" className="secundario" onClick={cerca} title="Ordenar por cercanía">📡</button>
+        <input type="search" placeholder="Busca o escribe un bar nuevo" value={texto} onChange={(e) => setTexto(e.target.value)} />
+        <button type="button" className={pos ? 'primario' : 'secundario'} onClick={localizar} disabled={buscando} title="Bares cerca de mí">
+          {buscando ? '…' : '📡'}
+        </button>
       </div>
       {!creando && (
         <ul className="lista-opciones">
           {lista.map((b) => (
-            <li key={b.id}>
-              <button type="button" onClick={() => onChange(b)}>
+            <li key={b.id ?? b.osm_id}>
+              <button type="button" onClick={() => elegir(b)}>
                 {b.name}{b.city ? <span className="tenue">, {b.city}</span> : null}
                 {b.km != null && <span className="tenue"> · {fmtKm(b.km)}</span>}
               </button>
@@ -74,7 +85,7 @@ export default function SelectorBar({ valor, onChange }: Props) {
           <button type="button" className="enlace" onClick={() => setCreando(false)}>✕</button>
         </div>
       )}
-      {error && <p className="error">{error}</p>}
+      {(error || errorPos) && <p className="error">{error || errorPos}</p>}
     </div>
   )
 }

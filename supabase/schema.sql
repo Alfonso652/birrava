@@ -19,6 +19,9 @@ create table if not exists public.bars (
   created_at  timestamptz not null default now()
 );
 
+-- Id del bar en OpenStreetMap ("node/123"): evita duplicar el mismo bar real.
+alter table public.bars add column if not exists osm_id text unique check (char_length(osm_id) <= 40);
+
 create table if not exists public.checkins (
   id          uuid primary key default gen_random_uuid(),
   -- Referencia a profiles (no a auth.users) para que PostgREST pueda embeber el username.
@@ -116,7 +119,9 @@ language sql stable security invoker set search_path = public as $$
 $$;
 
 -- Bares con su nº de check-ins, para el listado.
-create or replace view public.bars_stats with (security_invoker = on) as
+-- drop + create: b.* cambia de columnas al añadir osm_id y "create or replace" no lo admite.
+drop view if exists public.bars_stats;
+create view public.bars_stats with (security_invoker = on) as
   select b.*, count(c.id) as checkins
   from public.bars b
   left join public.checkins c on c.bar_id = b.id

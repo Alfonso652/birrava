@@ -153,5 +153,14 @@ button:disabled { opacity: 0.55; cursor: default; }
 /* Ajustes táctiles: sin retardo de doble toque, feedback al pulsar y sin rebote que arrastre la barra fija. */
 body { overscroll-behavior-y: none; }
 a, button, input, textarea { touch-action: manipulation; }
-button:active:not(:disabled), a:active { transform: scale(0.97); }
+button:active:not(:disabled), a.tarjeta:active, .tabbar a:active { transform: scale(0.97); }
 .tabbar, .segmentado, .estrellas { -webkit-user-select: none; user-select: none; }
+
+.mapa { height: 320px; border-radius: var(--radio); border: 1px solid var(--borde); margin: 10px 0 4px; z-index: 0; }
+.leyenda { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 8px; }
+.punto { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--fondo); }
+.punto.ambar { background: var(--ambar); }
+.punto.gris { background: #8a5a12; }
+button.tarjeta { font: inherit; width: 100%; }
+.texto-izq { text-align: left; }
+.leaflet-container { background: var(--superficie); font: inherit; }

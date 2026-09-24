@@ -9,6 +9,7 @@ export interface Bar {
   city: string | null
   lat: number | null
   lng: number | null
+  osm_id?: string | null
   checkins?: number
 }
 

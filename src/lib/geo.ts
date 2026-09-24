@@ -26,19 +26,20 @@ function mensaje(e: GeolocationPositionError) {
   return 'La ubicación tarda demasiado. Prueba otra vez o acércate a una ventana.'
 }
 
-// Primero una posición rápida (caché); la alta precisión por GPS en interiores
-// suele agotar el timeout y es lo que hacía fallar «Cerca».
+// Primero una posición rápida (red/wifi, vale una en caché); la alta precisión
+// por GPS en interiores suele agotar el timeout y es lo que hacía fallar "Cerca".
 export async function miPosicion(): Promise<Pos> {
   if (!('geolocation' in navigator)) throw new Error('Este navegador no permite ubicación.')
   if (!window.isSecureContext) throw new Error('La ubicación solo funciona con https.')
-
   try {
     return await pedir({ enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 })
-  } catch {
+  } catch (e) {
+    const err = e as GeolocationPositionError
+    if (err.code === err.PERMISSION_DENIED) throw new Error(mensaje(err))
     try {
       return await pedir({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 })
-    } catch (e) {
-      throw new Error(mensaje(e as GeolocationPositionError))
+    } catch (e2) {
+      throw new Error(mensaje(e2 as GeolocationPositionError))
     }
   }
 }
